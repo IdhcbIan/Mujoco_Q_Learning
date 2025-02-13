@@ -1,0 +1,84 @@
+<mujoco model="Skydio X2 scene">
+  <compiler angle="radian" meshdir="assets/" texturedir="assets/"/>
+
+  <option timestep="0.01" density="1.225" viscosity="1.8e-05"/>
+
+  <size nkey="1"/>
+
+  <visual>
+    <global azimuth="-20" elevation="-20" ellipsoidinertia="true"/>
+    <headlight ambient="0.3 0.3 0.3" diffuse="0.6 0.6 0.6" specular="0 0 0"/>
+    <rgba haze="0.15 0.25 0.35 1"/>
+  </visual>
+
+  <statistic meansize="0.05" extent="0.6" center="0 0 0.1"/>
+
+  <default>
+    <default class="x2">
+      <mesh scale="0.01 0.01 0.01"/>
+      <site group="5"/>
+      <general ctrlrange="0 13"/>
+      <default class="visual">
+        <geom type="mesh" contype="0" conaffinity="0" group="2"/>
+      </default>
+      <default class="collision">
+        <geom type="box" group="3"/>
+        <default class="rotor">
+          <geom size="0.13 0.13 0.01" type="ellipsoid"/>
+        </default>
+      </default>
+    </default>
+  </default>
+
+  <asset>
+    <texture type="2d" name="X2_lowpoly_texture_SpinningProps_1024" file="X2_lowpoly_texture_SpinningProps_1024.png"/>
+    <texture type="skybox" builtin="gradient" rgb1="0.3 0.5 0.7" rgb2="0 0 0" width="512" height="3072"/>
+    <texture type="2d" name="groundplane" builtin="checker" mark="edge" rgb1="0.2 0.3 0.4" rgb2="0.1 0.2 0.3" markrgb="0.8 0.8 0.8" width="300" height="300"/>
+    <material name="phong3SG" texture="X2_lowpoly_texture_SpinningProps_1024"/>
+    <material name="invisible" rgba="0 0 0 0"/>
+    <material name="groundplane" texture="groundplane" texuniform="true" texrepeat="5 5" reflectance="0.2"/>
+    <mesh name="X2_lowpoly" class="x2" file="X2_lowpoly.obj"/>
+  </asset>
+
+  <worldbody>
+    <geom name="floor" size="0 0 0.05" type="plane" material="groundplane"/>
+    <light name="spotlight" target="x2" pos="0 -1 2" dir="0 0 -1" mode="targetbodycom"/>
+    <light pos="0 0 1.5" dir="0 0 -1" directional="true"/>
+    <body name="x2" childclass="x2" pos="0 0 0.1">
+      <joint type="free" limited="false" actuatorfrclimited="false"/>
+      <geom class="visual" quat="0 0 0.707107 0.707107" mass="0" material="phong3SG" mesh="X2_lowpoly"/>
+      <geom class="collision" size="0.06 0.027 0.02" pos="0.04 0 0.02" mass="0"/>
+      <geom class="collision" size="0.06 0.027 0.02" pos="0.04 0 0.06" mass="0"/>
+      <geom class="collision" size="0.05 0.027 0.02" pos="-0.07 0 0.065" mass="0"/>
+      <geom class="collision" size="0.023 0.017 0.01" pos="-0.137 0.008 0.065" quat="0.707107 0 0 0.707107" mass="0"/>
+      <geom name="rotor1" class="rotor" pos="-0.14 -0.18 0.05" mass="0.25"/>
+      <geom name="rotor2" class="rotor" pos="-0.14 0.18 0.05" mass="0.25"/>
+      <geom name="rotor3" class="rotor" pos="0.14 0.18 0.08" mass="0.25"/>
+      <geom name="rotor4" class="rotor" pos="0.14 -0.18 0.08" mass="0.25"/>
+      <geom class="visual" size="0.16 0.04 0.02" pos="0 0 0.02" type="ellipsoid" mass="0.325" material="invisible"/>
+      <site name="imu" pos="0 0 0.02"/>
+      <site name="thrust1" pos="-0.14 -0.18 0.05"/>
+      <site name="thrust2" pos="-0.14 0.18 0.05"/>
+      <site name="thrust3" pos="0.14 0.18 0.08"/>
+      <site name="thrust4" pos="0.14 -0.18 0.08"/>
+      <camera name="track" pos="-1 0 0.5" quat="0.601501 0.371748 -0.371748 -0.601501" mode="trackcom"/>
+    </body>
+  </worldbody>
+
+  <actuator>
+    <general name="thrust1" class="x2" site="thrust1" gear="0 0 1 0 0 -0.0201"/>
+    <general name="thrust2" class="x2" site="thrust2" gear="0 0 1 0 0 0.0201"/>
+    <general name="thrust3" class="x2" site="thrust3" gear="0 0 1 0 0 0.0201"/>
+    <general name="thrust4" class="x2" site="thrust4" gear="0 0 1 0 0 -0.0201"/>
+  </actuator>
+
+  <sensor>
+    <gyro site="imu" name="body_gyro"/>
+    <accelerometer site="imu" name="body_linacc"/>
+    <framequat objtype="site" objname="imu" name="body_quat"/>
+  </sensor>
+
+  <keyframe>
+    <key name="hover" qpos="0 0 0.3 1 0 0 0" ctrl="3.24956 3.24956 3.24956 3.24956"/>
+  </keyframe>
+</mujoco>

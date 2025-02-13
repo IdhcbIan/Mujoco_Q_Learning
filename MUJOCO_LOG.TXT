@@ -1,0 +1,138 @@
+Thu Feb 13 11:32:53 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Thu Feb 13 11:44:14 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Thu Feb 13 11:44:41 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Thu Feb 13 11:46:40 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Thu Feb 13 11:47:18 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Thu Feb 13 11:47:55 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Thu Feb 13 11:53:04 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Thu Feb 13 11:54:48 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Thu Feb 13 11:56:24 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Thu Feb 13 11:57:40 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Thu Feb 13 11:58:10 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Thu Feb 13 11:59:26 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Thu Feb 13 11:59:43 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Thu Feb 13 12:00:28 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Thu Feb 13 12:01:10 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Thu Feb 13 12:01:30 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Thu Feb 13 12:01:56 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Thu Feb 13 12:02:24 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Thu Feb 13 12:03:30 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Thu Feb 13 12:03:34 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Thu Feb 13 12:03:42 2025
+WARNING: Inertia matrix is too close to singular at DOF 1. Check model. Time = 8.5000.
+
+Thu Feb 13 12:09:23 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Thu Feb 13 12:16:41 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Thu Feb 13 12:28:19 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Thu Feb 13 12:31:12 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Thu Feb 13 12:32:24 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Thu Feb 13 12:50:22 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Thu Feb 13 12:51:42 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Thu Feb 13 12:53:59 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Thu Feb 13 12:54:26 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Thu Feb 13 12:56:47 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Thu Feb 13 12:57:18 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Thu Feb 13 12:58:44 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Thu Feb 13 12:59:13 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Thu Feb 13 13:01:19 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Thu Feb 13 13:01:50 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Thu Feb 13 13:03:24 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Thu Feb 13 13:16:23 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Thu Feb 13 13:19:39 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Thu Feb 13 13:19:47 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Thu Feb 13 13:19:58 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Thu Feb 13 13:20:42 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Thu Feb 13 13:20:53 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Thu Feb 13 13:21:16 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Thu Feb 13 13:21:27 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Thu Feb 13 13:22:09 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
