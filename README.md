@@ -4,6 +4,7 @@
 
 ```tree
 📁 Root
+├── 📁 Shelf (drafts)
 ├── 📄 skydio_x2 (MuJoCo enviorment)
 ├── 📄 Deep_Q_lunar-ipynb (Lunar Lander Working Example)
 ├── 📄 Mujoco_Reward.py (Getting Reward function to work in env)
