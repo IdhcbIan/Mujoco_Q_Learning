@@ -3,7 +3,6 @@ from mujoco import viewer
 import numpy as np
 import time
 import threading
-
 # Load the model from the XML file
 model = mujoco.MjModel.from_xml_path('skydio_x2/scene.xml')
 
@@ -18,18 +17,30 @@ max_thrust = 5
 return_thrust = 3
 increment = 0.1  # Define the increment step
 
+def coef(x, a, b, c, O):
+    if O:
+        gx = a*np.sin(b*x) 
+    else:
+        gx = a*np.sin(b*x) + 0.3 * abs(np.sin(x/5))
+    return abs(gx) + c
 
 def f(x):
-    if x > 3.41:
-        return 3.15  # Fix thrust at 2 after x = 3.41
-    fx = -(x-2)**2 + 4
-    return max(fx, 0)  # Simplified return statement
+    fx = coef(x, 4, 1, 0, True) if x < np.pi/2 else coef(x, -0.96, 11, 2.6, False)
+    return abs(fx)  # Simplified return statement
+
+def reset_simulation():
+    """
+    Resets the simulation to its initial state.
+    """
+    mujoco.mj_resetData(model, data)
+    data.ctrl[:] = 0.0  # Reset control inputs
+    print("Simulation has been reset.")
 
 def thrust_control():
-    current_time = 0.0
-    start_time = time.time()  # Add start time for tracking flight duration
+    start_time = time.time()  # Start time for tracking flight duration
     while True:
-        thrust_value = f(current_time)
+        current_flight_time = time.time() - start_time
+        thrust_value = f(current_flight_time)  # Use elapsed time for thrust calculation
         data.ctrl[:] = [thrust_value] * model.nu
         mujoco.mj_step(model, data)
         
@@ -39,16 +50,27 @@ def thrust_control():
         drone_z = data.qpos[2]
         
         # Calculate and print current time in air
-        current_flight_time = time.time() - start_time
-        if drone_z < 0.01:
-            start_time = time.time()  # Add start time for tracking flight duration
-        print(f"Time: {current_time:.2f}, Thrust: {thrust_value:.2f}, Position: x={drone_x:.2f}, y={drone_y:.2f}, z={drone_z:.2f}")
+        # current_flight_time is already calculated
+        
+        # Only check for resets after the first second
+        if current_flight_time > 8.0:
+            if drone_z < 0.01:
+                start_time = time.time()  # Reset start time for tracking flight duration
+                reset_simulation()        # Reset the simulation when drone is on the ground
+        
+        # Calculate reward
+        reward = current_flight_time - (abs(drone_x) + abs(drone_y)) * 5
+        
+        print(f"Time: {current_flight_time:.2f}, Thrust: {thrust_value:.2f}, Position: x={drone_x:.2f}, y={drone_y:.2f}, z={drone_z:.2f}")
         print(f"Time in air: {current_flight_time:.2f}")
-        print(f"Reward: {current_flight_time - (abs(drone_x) + abs(drone_y))*5}")
-
-        current_time += 0.01
-        if current_time > 10:
-            current_time = 0
+        print(f"Reward: {reward}")
+    
+        # Only check for reward-based reset after the first second
+        if current_flight_time > 2.0 and reward <= -20:
+            start_time = time.time()
+            reset_simulation()
+            print("Resetting due to low reward")
+    
         time.sleep(0.01)
 
 thrust_thread = threading.Thread(target=thrust_control, daemon=True)

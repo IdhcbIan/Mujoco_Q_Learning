@@ -4,9 +4,8 @@ import mujoco
 from mujoco import viewer
 import numpy as np
 import time
-import threading
 import logging
-
+import threading
 import gymnasium as gym
 import math
 import random
@@ -29,6 +28,11 @@ writer = SummaryWriter('runs/Q_Learning_Hover')
 
 #------// Setting Up NN   //------------------------------
 # Set up device
+
+def Reward_Function(current_flight_time, drone_x, drone_y, drone_z, desired_z):
+    reward = (current_flight_time-10)*10  - 0.2*(abs(drone_x) + abs(drone_y)) - (abs(drone_z) - desired_z)*8 
+    return reward
+
 
 device = torch.device(
     "cuda" if torch.cuda.is_available() else
@@ -62,7 +66,9 @@ class DQN(nn.Module):
     def forward(self, x):
         x = torch.relu(self.layer1(x))
         x = torch.relu(self.layer2(x))
-        return self.layer3(x)  # Outputs raw Q-values
+        raw_output = self.layer3(x)
+        # Start at 6.5, allow network to output between 0-13
+        return 6.5 + 6.5 * torch.tanh(raw_output)  # Maps to 0-13 centered at 6.5
 
 #------// Setting Up Drone Environment   //------------------------------
 # Load the model from the XML file
@@ -75,74 +81,18 @@ data = mujoco.MjData(model)
 data.ctrl[:] = 0.0
 
 # Define thrust levels
-max_thrust = 5
-return_thrust = 3
-increment = 0.1  # Define the increment step
+max_thrust = 13
+return_thrust = 3.4
+increment = 0.5  # Define the increment step
 
 # ---- Desired Altitude ----
-desired_z = 5.0  # Set your desired altitude
+desired_z = 10.0  # Set your desired altitude
 
 def reset_simulation():
-    """Resets the Mujoco simulation to initial state."""
-    global data
-    data = mujoco.MjData(model)
-    data.ctrl[:] = 0.0
-    mujoco.mj_forward(model, data)
-
-def thrust_control():
-    """Controls the drone thrust using the neural network and resets simulation upon landing."""
-    global data, model, start_time
-    action_counts = {0:0, 1:0, 2:0, 3:0}  # Initialize action counts
-    while True:
-        # Get current state
-        state = get_state()
-        state_tensor = torch.tensor([state], dtype=torch.float32, device=device)
-        with torch.no_grad():
-            action = policy_net(state_tensor).max(1).indices.item()
-
-        action_counts[action] += 1  # Count the action
-
-        # Map action to thrust value
-        # Example mapping: 0=decrease thrust, 1=maintain, 2=increase, 3=max thrust
-        if action == 0:
-            thrust_value = max(return_thrust - increment, 0)
-        elif action == 1:
-            thrust_value = return_thrust
-        elif action == 2:
-            thrust_value = return_thrust + increment
-        elif action == 3:
-            thrust_value = max_thrust
-        else:
-            thrust_value = return_thrust  # Default action
-
-        data.ctrl[:] = [thrust_value] * model.nu
-        mujoco.mj_step(model, data)
-
-        # Get drone position
-        drone_x = data.qpos[0]
-        drone_y = data.qpos[1]
-        drone_z = data.qpos[2]
-
-        # Calculate and print current time in air
-        current_flight_time = time.time() - start_time
-        if drone_z < 0.01:
-            # Reset simulation
-            reset_simulation()
-            print("Drone has reached the ground. Simulation reset.")
-            start_time = time.time()  # Reset flight time
-
-            # Log action distribution
-            logging.info(f"Action distribution in last episode: {action_counts}")
-            action_counts = {0:0, 1:0, 2:0, 3:0}  # Reset counts for next episode
-
-        # Updated reward with -10
-        reward_value = current_flight_time - 100 - (abs(drone_x) + abs(drone_y)) * 5 - abs(drone_z - desired_z) * 2
-
-        print(f"Thrust: {thrust_value:.2f}, Position: x={drone_x:.2f}, y={drone_y:.2f}, z={drone_z:.2f}")
-        print(f"Time in air: {current_flight_time:.2f}")
-        print(f"Reward: {reward_value:.2f}")
-
-        time.sleep(0.01)
+    """Resets the simulation to its initial state."""
+    mujoco.mj_resetData(model, data)
+    data.ctrl[:] = 0.0  # Reset control inputs
+    print("Simulation has been reset.")
 
 #------// Setting Up Hyperparameters   //------------------------------
 
@@ -236,102 +186,107 @@ def optimize_model():
     # Log the loss to TensorBoard
     writer.add_scalar('Loss', loss.item(), global_step=steps_done)
 
-    # Optionally log average loss over recent steps
-    # (Implement moving average if desired)
+#------// Action Mapping //------------------------------
 
-def training_loop():
-    """Runs the training loop for the DQN."""
-    global start_time  # Declare start_time as global
+# Define possible thrust adjustments corresponding to actions
+ACTION_MAPPING = {
+    0: -1.0,   # Decrease thrust by 1.0
+    1: 0.0,    # Maintain current thrust
+    2: 1.0,    # Increase thrust by 1.0
+    3: max_thrust  # Set thrust to maximum value
+}
+
+#------// Selecting and Applying Actions //------------------------------
+
+def main_loop():
+    """Runs the combined training and thrust control loop."""
+    global steps_done
     num_episodes = 600
+    
     for i_episode in range(num_episodes):
         # Reset the Mujoco simulation
-        data.qpos[:] = model.qpos0.copy()
-        data.qvel[:] = model.qvel0.copy()
-        mujoco.mj_forward(model, data)
-
-        start_time = time.time()  # Track the start time of the episode
+        reset_simulation()
+        simulation_steps = 0  # Track simulation steps instead of wall clock time
         state = torch.tensor(get_state(), dtype=torch.float32, device=device).unsqueeze(0)
 
-        episode_reward = 0  # Initialize episode reward
+        episode_reward = 0
+        action_counts = {0:0, 1:0, 2:0, 3:0}
 
-        for t in count():
+        test = time.time()
+        while True:
+            # Select and perform an action
             action = select_action(state)
-            # Map action to thrust value for simulation
-            if action.item() == 0:
-                thrust_value = max(return_thrust - increment, 0)
-            elif action.item() == 1:
-                thrust_value = return_thrust
-            elif action.item() == 2:
-                thrust_value = return_thrust + increment
-            elif action.item() == 3:
-                thrust_value = max_thrust
-            else:
-                thrust_value = return_thrust  # Default action
+            action_counts[action.item()] += 1
 
-            data.ctrl[:] = [thrust_value] * model.nu
+            # Map the discrete action to thrust adjustment
+            thrust_adjustment = ACTION_MAPPING[action.item()]
+
+            # Get current thrust and apply adjustment
+            current_thrust = data.ctrl[0]
+            new_thrust = np.clip(current_thrust + thrust_adjustment, 0.0, max_thrust)
+
+            data.ctrl[:] = [new_thrust] * model.nu
             mujoco.mj_step(model, data)
+            simulation_steps += 1
 
             # Get new state
-            next_state = torch.tensor(get_state(), dtype=torch.float32, device=device).unsqueeze(0)
+            next_state_np = get_state()
+            next_state = torch.tensor(next_state_np, dtype=torch.float32, device=device).unsqueeze(0)
 
             # Get drone position
             drone_x = data.qpos[0]
             drone_y = data.qpos[1]
             drone_z = data.qpos[2]
 
-            # Calculate current flight time
-            current_flight_time = time.time() - start_time
-
-            # Compute reward with -100 and altitude penalty
-            reward = current_flight_time - 100 - (abs(drone_x) + abs(drone_y)) * 5 - abs(drone_z - desired_z) * 2
-            episode_reward += reward  # Accumulate rewards
-            reward_tensor = torch.tensor([reward], device=device)
+            # Calculate reward using simulation time instead of wall clock time
+            reward = Reward_Function((time.time() - test), drone_x, drone_y, drone_z, desired_z)
+            #print(reward)
+            episode_reward += reward
+            current_sim_time = time.time() - test
 
             # Check if episode is done
-            done = drone_z < 0.01 or reward < -300
-            if reward < -300:
-                # Reset Mujoco simulation
-                data.qpos[:] = model.qpos0.copy()
-                data.qvel[:] = model.qvel0.copy()
-                mujoco.mj_forward(model, data)
-                next_state = torch.tensor(get_state(), dtype=torch.float32, device=device).unsqueeze(0)
-            elif drone_z < 0.01:
+            done = (current_sim_time > 2.0 and drone_z < 0.01) or \
+                   (current_sim_time > 2.0 and drone_z > 15.0) or \
+                   (current_sim_time > 2.0 and drone_x > 15.0) or \
+                   (current_sim_time > 2.0 and drone_y > 15.0) or \
+                   (current_sim_time > 2.0 and reward <= -200)
+            
+            if done:
                 next_state = None
+                reset_simulation()
+                if reward <= -200:
+                    print("Resetting due to low reward")
+                logging.info(f"Action distribution in episode {i_episode + 1}: {action_counts}")
 
             # Store the transition in memory
-            memory.push(state, action, next_state, reward_tensor)
-            state = next_state
+            memory.push(state, action, next_state, torch.tensor([reward], device=device))
+            state = next_state if not done else torch.tensor(get_state(), dtype=torch.float32, device=device).unsqueeze(0)
 
+            # Optimize the model
             optimize_model()
 
             # Update the target network
-            target_net_state_dict = target_net.state_dict()
-            policy_net_state_dict = policy_net.state_dict()
-            for key in policy_net_state_dict:
-                target_net_state_dict[key] = (policy_net_state_dict[key] * TAU +
-                                              target_net_state_dict[key] * (1 - TAU))
-            target_net.load_state_dict(target_net_state_dict)
+            if steps_done % 100 == 0:
+                target_net.load_state_dict(policy_net.state_dict())
 
             if done:
-                logging.info(f"Episode {i_episode + 1} finished after {t + 1} steps with reward: {episode_reward:.2f}")
-                # Optionally, log average action distribution
+                logging.info(f"Episode {i_episode + 1} finished with reward: {episode_reward:.2f}")
+                logging.info(f"Time in simulation: {current_sim_time:.2f} seconds")
                 break
+
     print('Training Complete')
     writer.close()
 
-#------// Starting Threads   //------------------------------
+#------// Starting the Combined Loop and Launching Viewer   //------------------------------
 
-# Initialize start_time before starting threads
-start_time = time.time()
+if __name__ == "__main__":
+    # Start the combined training and control loop
+    training_thread = threading.Thread(target=main_loop, daemon=True)
+    training_thread.start()
 
-# Start the training and control threads
-training_thread = threading.Thread(target=training_loop, daemon=True)
-training_thread.start()
-
-thrust_thread = threading.Thread(target=thrust_control, daemon=True)
-thrust_thread.start()
-
-# Launch the viewer on the main thread.
-with viewer.launch(model, data) as vis:
-    while vis.is_running:
-        vis.render()
+    # Launch the viewer on the main thread.
+    with viewer.launch(model, data) as vis:
+        while vis.is_running:
+            mujoco.mj_step(model, data)  # Step the simulation
+            vis.render()
+            time.sleep(0.01)  # Control the simulation speed
